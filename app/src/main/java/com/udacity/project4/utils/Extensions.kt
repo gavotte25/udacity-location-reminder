@@ -3,6 +3,7 @@ package com.udacity.project4.utils
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.content.Context
+import android.location.Location
 import android.net.ConnectivityManager
 import android.util.Log
 import android.view.View
@@ -11,6 +12,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.udacity.project4.base.BaseRecyclerViewAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -65,4 +69,9 @@ fun View.fadeOut() {
             this@fadeOut.visibility = View.GONE
         }
     })
+}
+
+fun GoogleMap.zoomToLocation(location: Location, zoomLevel: Float = 17f) {
+    val latLng = LatLng(location.latitude, location.longitude)
+    this.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoomLevel))
 }
