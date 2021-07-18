@@ -2,6 +2,7 @@ package com.udacity.project4.locationreminders.reminderslist
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
@@ -31,10 +32,10 @@ class ReminderListFragment : BaseFragment() {
                 R.layout.fragment_reminders, container, false
             )
         binding.viewModel = _viewModel
-        binding.refreshLayout.setOnRefreshListener { _viewModel.loadReminders() }
+        binding.refreshLayout.setOnRefreshListener {
+            _viewModel.loadReminders()
+        }
         observeAuthenticationState()
-        observeLoadingState()
-
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(false)
         setTitle(getString(R.string.app_name))
@@ -48,6 +49,11 @@ class ReminderListFragment : BaseFragment() {
         binding.addReminderFAB.setOnClickListener {
             navigateToAddReminder()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        observeLoadingState()
     }
 
     override fun onResume() {
@@ -68,7 +74,7 @@ class ReminderListFragment : BaseFragment() {
      * To stop refreshing after swipe refresh once the update is done
      */
     private fun observeLoadingState() {
-        _viewModel.showLoading.observe(viewLifecycleOwner, Observer {
+        _viewModel.showLoading.observe(this, Observer {
             if(it == false) {
                 binding.refreshLayout.isRefreshing = false
             }

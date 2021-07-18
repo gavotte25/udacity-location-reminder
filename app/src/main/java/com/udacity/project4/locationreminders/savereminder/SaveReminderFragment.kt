@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,7 +21,6 @@ import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSaveReminderBinding
 import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
-import com.udacity.project4.locationreminders.savereminder.selectreminderlocation.SelectLocationFragment
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 
@@ -56,7 +54,7 @@ class SaveReminderFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
-        binding.selectLocation.setOnClickListener {
+        binding.llLocation.setOnClickListener {
             //            Navigate to another fragment to get the user location
             _viewModel.navigationCommand.value =
                 NavigationCommand.To(SaveReminderFragmentDirections.actionSaveReminderFragmentToSelectLocationFragment())
@@ -84,16 +82,12 @@ class SaveReminderFragment : BaseFragment() {
         val geofenceRequest = getGeoFencingRequest(geofence)
         if ((ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
                 (runningQorLater() && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
-                    Log.i("PERRY", "checkPermissionAndAddGeoFence true")
                     if(runningQorLater()) {
-                        Log.i("PERRY", "requestPermissionFromQAndAbove called")
                         requestPermissionFromQAndAbove()
                     } else {
-                        Log.i("PERRY", "requestPermissionBelowQ called")
                         requestPermissionBelowQ()
                     }
         } else {
-            Log.i("PERRY", "checkPermissionAndAddGeoFence false")
             geofencingClient.addGeofences(geofenceRequest, geofencePendingIntent).run {
                 addOnSuccessListener {
                     _viewModel.saveReminder(reminder)
@@ -126,11 +120,9 @@ class SaveReminderFragment : BaseFragment() {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        Log.i("PERRY", "onRequestPermissionsResult called")
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if ((requestCode != LOCATION_BACKGROUND_PERMISSION_REQUEST_CODE && runningQorLater())||
                 requestCode != LOCATION_PERMISSION_REQUEST_CODE && !runningQorLater()) {
-            Log.i("PERRY", "request not called")
                     return
         }
         if (grantResults.contains(PackageManager.PERMISSION_DENIED)) {

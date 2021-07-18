@@ -36,7 +36,6 @@ class ReminderDescriptionActivity : AppCompatActivity() {
         )
         intent?.extras?.get(EXTRA_ReminderDataItem)?.apply {
             val reminder = this as ReminderDataItem
-            Log.i("PERRY", reminder.title!!)
             binding.reminderDataItem = reminder
         }
     }
