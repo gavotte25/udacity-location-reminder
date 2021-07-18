@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -20,7 +21,6 @@ import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.zoomToLocation
-import kotlinx.android.synthetic.main.it_reminder.*
 import org.koin.android.ext.android.inject
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
@@ -90,6 +90,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         map.setOnMarkerClickListener(this::onMarkerClick)
         map.setOnPoiClickListener(this::addPoiMarker)
         binding.btnSave.setOnClickListener{onLocationSelected()}
+        setMapStyle()
         enableMyLocation()
     }
 
@@ -167,8 +168,21 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
+    private fun setMapStyle() {
+        try {
+            val success = map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style))
+            if (!success) {
+                Log.e(TAG, "Style parsing failed")
+            }
+        }
+        catch (e: Resources.NotFoundException) {
+            Log.e(TAG, "Can't find map style. Error: ", e)
+        }
+    }
+
     companion object {
         const val LOCATION_PERMISSION_REQUEST_CODE = 2502
+        val TAG: String = SelectLocationFragment::class.java.simpleName
     }
 
 
