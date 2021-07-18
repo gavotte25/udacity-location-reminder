@@ -115,8 +115,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     private fun addMarker(latLng: LatLng) {
-        val title = String.format("Lat: 1%.5f. Long: 2%.5f", latLng.latitude, latLng.longitude)
-        map.addMarker(MarkerOptions().position(latLng).title(title))
+        map.addMarker(MarkerOptions().position(latLng).snippet(getLatLngString(latLng)).title("Unknown"))
         hideButtonAndReset()
     }
 
