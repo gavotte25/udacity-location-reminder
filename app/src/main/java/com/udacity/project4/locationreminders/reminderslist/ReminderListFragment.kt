@@ -33,9 +33,11 @@ class ReminderListFragment : BaseFragment() {
             )
         binding.viewModel = _viewModel
         binding.refreshLayout.setOnRefreshListener {
+            binding.refreshLayout.isRefreshing = false // Disable progress animation because we already have ProgressBar
             _viewModel.loadReminders()
         }
         observeAuthenticationState()
+        observeLoadingState()
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(false)
         setTitle(getString(R.string.app_name))
@@ -49,11 +51,6 @@ class ReminderListFragment : BaseFragment() {
         binding.addReminderFAB.setOnClickListener {
             navigateToAddReminder()
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        observeLoadingState()
     }
 
     override fun onResume() {
@@ -74,7 +71,7 @@ class ReminderListFragment : BaseFragment() {
      * To stop refreshing after swipe refresh once the update is done
      */
     private fun observeLoadingState() {
-        _viewModel.showLoading.observe(this, Observer {
+        _viewModel.showLoading.observe(viewLifecycleOwner, Observer {
             if(it == false) {
                 binding.refreshLayout.isRefreshing = false
             }
