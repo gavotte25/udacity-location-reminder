@@ -1,6 +1,8 @@
 package com.udacity.project4.locationreminders.reminderslist
 
 import android.app.Application
+import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
@@ -9,6 +11,7 @@ import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.dto.Result
 import com.udacity.project4.utils.FirebaseUserLiveData
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class RemindersListViewModel(
@@ -17,8 +20,10 @@ class RemindersListViewModel(
 ) : BaseViewModel(app) {
     // list that holds the reminder data to be displayed on the UI
     val remindersList = MutableLiveData<List<ReminderDataItem>>()
-    val authenticationState = FirebaseUserLiveData().map {
+    private var _authenticationState = FirebaseUserLiveData().map {
         if(it != null) AuthenticationState.AUTHENTICATED else AuthenticationState.UNAUTHENTICATED }
+    val authenticationState: LiveData<AuthenticationState>
+        get() = _authenticationState
     /**
      * Get all the reminders from the DataSource and add them to the remindersList to be shown on the UI,
      * or show error if any
@@ -32,6 +37,7 @@ class RemindersListViewModel(
             when (result) {
                 is Result.Success<*> -> {
                     val dataList = ArrayList<ReminderDataItem>()
+                    @Suppress("UNCHECKED_CAST")
                     dataList.addAll((result.data as List<ReminderDTO>).map { reminder ->
                         //map the reminder data from the DB to the be ready to be displayed on the UI
                         ReminderDataItem(
@@ -62,4 +68,10 @@ class RemindersListViewModel(
     }
 
     enum class AuthenticationState { AUTHENTICATED, UNAUTHENTICATED }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun setAuthenticationState(state: AuthenticationState) {
+        _authenticationState = MutableLiveData<AuthenticationState>()
+        (_authenticationState as MutableLiveData).value = state
+    }
 }

@@ -37,7 +37,6 @@ class ReminderListFragment : BaseFragment() {
             _viewModel.loadReminders()
         }
         observeAuthenticationState()
-        observeLoadingState()
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(false)
         setTitle(getString(R.string.app_name))
@@ -63,17 +62,6 @@ class ReminderListFragment : BaseFragment() {
         _viewModel.authenticationState.observe(viewLifecycleOwner, Observer {state ->
             if (state == RemindersListViewModel.AuthenticationState.UNAUTHENTICATED) {
                 startActivity(Intent(requireActivity().applicationContext, AuthenticationActivity::class.java))
-            }
-        })
-    }
-
-    /**
-     * To stop refreshing after swipe refresh once the update is done
-     */
-    private fun observeLoadingState() {
-        _viewModel.showLoading.observe(viewLifecycleOwner, Observer {
-            if(it == false) {
-                binding.refreshLayout.isRefreshing = false
             }
         })
     }
