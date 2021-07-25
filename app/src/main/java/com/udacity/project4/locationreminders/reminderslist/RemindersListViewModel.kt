@@ -1,8 +1,6 @@
 package com.udacity.project4.locationreminders.reminderslist
 
 import android.app.Application
-import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
@@ -11,19 +9,16 @@ import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.dto.Result
 import com.udacity.project4.utils.FirebaseUserLiveData
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class RemindersListViewModel(
-    app: Application,
-    private val dataSource: ReminderDataSource
+        app: Application,
+        private val dataSource: ReminderDataSource
 ) : BaseViewModel(app) {
     // list that holds the reminder data to be displayed on the UI
     val remindersList = MutableLiveData<List<ReminderDataItem>>()
-    private var _authenticationState = FirebaseUserLiveData().map {
+    val authenticationState = FirebaseUserLiveData().map {
         if(it != null) AuthenticationState.AUTHENTICATED else AuthenticationState.UNAUTHENTICATED }
-    val authenticationState: LiveData<AuthenticationState>
-        get() = _authenticationState
     /**
      * Get all the reminders from the DataSource and add them to the remindersList to be shown on the UI,
      * or show error if any
@@ -41,12 +36,12 @@ class RemindersListViewModel(
                     dataList.addAll((result.data as List<ReminderDTO>).map { reminder ->
                         //map the reminder data from the DB to the be ready to be displayed on the UI
                         ReminderDataItem(
-                            reminder.title,
-                            reminder.description,
-                            reminder.location,
-                            reminder.latitude,
-                            reminder.longitude,
-                            reminder.id
+                                reminder.title,
+                                reminder.description,
+                                reminder.location,
+                                reminder.latitude,
+                                reminder.longitude,
+                                reminder.id
                         )
                     })
                     remindersList.value = dataList
@@ -68,10 +63,4 @@ class RemindersListViewModel(
     }
 
     enum class AuthenticationState { AUTHENTICATED, UNAUTHENTICATED }
-
-    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    fun setAuthenticationState(state: AuthenticationState) {
-        _authenticationState = MutableLiveData<AuthenticationState>()
-        (_authenticationState as MutableLiveData).value = state
-    }
 }

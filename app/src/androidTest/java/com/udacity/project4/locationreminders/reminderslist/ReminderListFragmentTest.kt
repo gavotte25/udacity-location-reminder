@@ -12,7 +12,9 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import com.google.firebase.auth.FirebaseAuth
 import com.udacity.project4.R
+import com.udacity.project4.locationreminders.data.AndroidTestFakeDataSource
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.local.LocalDB
@@ -29,8 +31,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.context.unloadKoinModules
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.koin.test.AutoCloseKoinTest
@@ -47,6 +51,8 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
     private lateinit var appContext: Application
     private lateinit var repoModule: Module
     private val dataBindingIdlingResource = DataBindingIdlingResource()
+    private val testEmail = "androidtest@gmail.com"
+    private val testPassword = "password"
 
     @Before
     fun setup() {
@@ -54,10 +60,9 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
         appContext = getApplicationContext()
         val myModule = module {
             viewModel {
-                createModifiedViewModel(
+                RemindersListViewModel(
                         appContext,
-                        get() as ReminderDataSource,
-                        get()
+                        get() as ReminderDataSource
                 )
             }
             single {
@@ -91,6 +96,7 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
         runBlocking {
             repository.deleteAllReminders()
         }
+        FirebaseAuth.getInstance().signOut()
     }
 
     @Before
@@ -106,16 +112,7 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
     }
 
     @Test
-    fun whenNotLogin_thenNavigateToAuthenticationActivity() {
-        loadAuthModule(RemindersListViewModel.AuthenticationState.UNAUTHENTICATED)
-        val scenario = launchFragmentInContainer<ReminderListFragment>(null, R.style.AppTheme)
-        dataBindingIdlingResource.monitorFragment(scenario)
-        onView(withId(R.id.btn_login)).check(matches(isDisplayed()))
-    }
-
-    @Test
-    fun givenAfterLogin_whenClickFAB_thenNavigateToSaveReminderFragment() {
-        loadAuthModule(RemindersListViewModel.AuthenticationState.AUTHENTICATED)
+    fun givenAfterLogin_whenClickFAB_thenNavigateToSaveReminderFragment() = signInWrapper {
         val scenario = launchFragmentInContainer<ReminderListFragment>(null, R.style.AppTheme)
         dataBindingIdlingResource.monitorFragment(scenario)
         val navController = mock(NavController::class.java)
@@ -127,17 +124,15 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
     }
 
     @Test
-    fun givenAfterLogin_whenNoData_thenShowNoData() {
-        loadAuthModule(RemindersListViewModel.AuthenticationState.AUTHENTICATED)
+    fun givenAfterLogin_whenNoData_thenShowNoData() = signInWrapper{
         val scenario = launchFragmentInContainer<ReminderListFragment>(null, R.style.AppTheme)
         dataBindingIdlingResource.monitorFragment(scenario)
         onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
     }
 
     @Test
-    fun givenAfterLogin_whenHasData_thenDataIsDisplayed(){
+    fun givenAfterLogin_whenHasData_thenDataIsDisplayed() = signInWrapper {
         runBlocking {
-            loadAuthModule(RemindersListViewModel.AuthenticationState.AUTHENTICATED)
             for(i in 1..2) {
                 repository.saveReminder(ReminderDTO("title$i", "description$i","location$i",i.toDouble(),i.toDouble()))
             }
@@ -149,9 +144,8 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
     }
 
     @Test
-    fun givenAfterLogin_whenLoadingStartToEnd_ProgressBarAppearAndDisappear() {
+    fun givenAfterLogin_whenLoadingStartToEnd_ProgressBarAppearAndDisappear() = signInWrapper{
         runBlocking{
-            loadAuthModule(RemindersListViewModel.AuthenticationState.AUTHENTICATED)
             for(i in 1..2) {
                 repository.saveReminder(ReminderDTO("title$i", "description$i","location$i",i.toDouble(),i.toDouble()))
             }
@@ -164,9 +158,8 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
     }
 
     @Test
-    fun givenAfterLogin_whenLoadDataError_thenSnackBarPopup() {
+    fun givenAfterLogin_whenLoadDataError_thenSnackBarPopup() = signInWrapper {
         runBlocking{
-            loadAuthModule(RemindersListViewModel.AuthenticationState.AUTHENTICATED)
             swapFakeRepoModule(repoModule)
             for(i in 1..2) {
                 repository.saveReminder(ReminderDTO("title$i", "description$i","location$i",i.toDouble(),i.toDouble()))
@@ -174,6 +167,26 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
             val scenario = launchFragmentInContainer<ReminderListFragment>(null, R.style.AppTheme)
             dataBindingIdlingResource.monitorFragment(scenario)
             onView(withId(com.google.android.material.R.id.snackbar_text)).check(matches(withText("Error")))
+        }
+    }
+
+    private fun swapFakeRepoModule(repoModule: Module) {
+        unloadKoinModules(repoModule)
+        val fakeRepoModule = module {
+            single { AndroidTestFakeDataSource(arrayListOf(), true) as ReminderDataSource }
+        }
+        loadKoinModules(fakeRepoModule)
+    }
+
+    private fun signInWrapper(function: () -> Unit) {
+        val task = FirebaseAuth.getInstance().signInWithEmailAndPassword(testEmail, testPassword)
+        task.apply {
+            addOnSuccessListener {
+                function()
+            }
+            addOnFailureListener() {
+                throw(it)
+            }
         }
     }
 }

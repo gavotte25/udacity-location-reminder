@@ -23,12 +23,6 @@ class AuthenticationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_authentication)
-//         TODO: Implement the create account and sign in using FirebaseUI, use sign in using email and sign in using Google
-
-
-//          TODO: a bonus is to customize the sign in flow to look nice using :
-        //https://github.com/firebase/FirebaseUI-Android/blob/master/auth/README.md#custom-layout
-
     }
 
 
@@ -37,7 +31,7 @@ class AuthenticationActivity : AppCompatActivity() {
             AuthUI.IdpConfig.EmailBuilder().build(),
             AuthUI.IdpConfig.GoogleBuilder().build())
         val authIntent = AuthUI.getInstance()
-            .createSignInIntentBuilder()
+            .createSignInIntentBuilder().setIsSmartLockEnabled(false)
             .setAvailableProviders(authProviders)
             .build()
         startActivityForResult(authIntent, AUTH_REQUEST_CODE)
@@ -57,7 +51,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
     private fun navigateToRemindersActivity() {
         startActivity(Intent(application, RemindersActivity::class.java))
-        finishAffinity()
+        if (this.isTaskRoot) finishAffinity() // if not root, no need to call it because it will start RemindersActivity, which is SingleTask
     }
 
     private companion object {

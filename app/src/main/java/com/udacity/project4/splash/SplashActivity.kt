@@ -4,20 +4,16 @@ import androidx.appcompat.app.AppCompatActivity
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.annotation.VisibleForTesting
 
 import com.google.firebase.auth.FirebaseAuth
 import com.udacity.project4.R
 import com.udacity.project4.authentication.AuthenticationActivity
 import com.udacity.project4.locationreminders.RemindersActivity
-import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.utils.wrapEspressoIdlingResource
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
 class SplashActivity : AppCompatActivity(), CoroutineScope {
-
-    private var hasLoggedIn: Boolean = FirebaseAuth.getInstance().currentUser != null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
@@ -38,19 +34,14 @@ class SplashActivity : AppCompatActivity(), CoroutineScope {
         CoroutineScope(coroutineContext).launch {
             delay(700)
             val intent = Intent(
-                application,
-                when (hasLoggedIn) {
-                    true -> RemindersActivity::class.java
-                    false -> AuthenticationActivity::class.java
-                })
+                    application,
+                    when (FirebaseAuth.getInstance().currentUser != null) {
+                        true -> RemindersActivity::class.java
+                        false -> AuthenticationActivity::class.java
+                    })
             intent.addFlags(Intent.FLAG_ACTIVITY_TASK_ON_HOME)
             startActivity(intent)
             finishAffinity()
         }
-    }
-
-    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    fun setLoginState(state: RemindersListViewModel.AuthenticationState) {
-        hasLoggedIn = state == RemindersListViewModel.AuthenticationState.AUTHENTICATED
     }
 }
