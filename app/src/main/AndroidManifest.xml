@@ -39,8 +39,7 @@
         <activity android:name=".authentication.AuthenticationActivity">
         </activity>
         <activity
-            android:name=".locationreminders.RemindersActivity"
-            android:launchMode="singleTask">
+            android:name=".locationreminders.RemindersActivity">
         </activity>
 
         <receiver

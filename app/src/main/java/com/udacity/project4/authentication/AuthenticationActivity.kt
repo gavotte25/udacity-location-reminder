@@ -51,7 +51,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
     private fun navigateToRemindersActivity() {
         startActivity(Intent(application, RemindersActivity::class.java))
-        if (this.isTaskRoot) finishAffinity() // if not root, no need to call it because it will start RemindersActivity, which is SingleTask
+        finishAffinity()
     }
 
     private companion object {

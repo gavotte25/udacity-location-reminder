@@ -65,9 +65,10 @@ class ReminderListFragmentTest: AutoCloseKoinTest() {
                         get() as ReminderDataSource
                 )
             }
-            single {
+            viewModel {
+                //This view model is supposed to be call by sharedViewModel
                 SaveReminderViewModel(
-                        appContext,
+                        get(),
                         get() as ReminderDataSource
                 )
             }

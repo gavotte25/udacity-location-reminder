@@ -86,10 +86,11 @@ class RemindersActivityTest :
                     get() as ReminderDataSource
                 )
             }
-            single {
+            viewModel {
+                //This view model is supposed to be call by sharedViewModel
                 SaveReminderViewModel(
-                    appContext,
-                    get() as ReminderDataSource
+                        get(),
+                        get() as ReminderDataSource
                 )
             }
             single { RemindersLocalRepository(get()) as ReminderDataSource }

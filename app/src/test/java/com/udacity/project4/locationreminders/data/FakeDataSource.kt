@@ -19,8 +19,8 @@ class FakeDataSource(private val data: ArrayList<ReminderDTO>, private val error
 
     override suspend fun getReminder(id: String): Result<ReminderDTO> {
         val reminder = data.find { it.id == id }
-        return if (reminder==null) {
-            Result.Error("Not exists")
+        return if (reminder==null || errorFlag) {
+            Result.Error("Error")
         } else {
             Result.Success(reminder)
         }

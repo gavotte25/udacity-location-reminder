@@ -2,6 +2,8 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
@@ -9,6 +11,7 @@ import android.util.Log
 import android.view.*
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -18,15 +21,18 @@ import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
+import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
+import com.udacity.project4.locationreminders.savereminder.SaveReminderFragment
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.zoomToLocation
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     //Use Koin to get the view model of the SaveReminder
-    override val _viewModel: SaveReminderViewModel by inject()
+    override val _viewModel: SaveReminderViewModel by sharedViewModel()
     private var selectedPosition: LatLng? = null
     private var selectedPostionDescrition: String = ""
     private lateinit var binding: FragmentSelectLocationBinding
@@ -152,8 +158,28 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     LOCATION_PERMISSION_REQUEST_CODE)
         } else {
             map.isMyLocationEnabled = true
-            FusedLocationProviderClient(requireContext()).lastLocation.addOnSuccessListener {
-                map.zoomToLocation(it)
+            checkLocationSettings()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun checkLocationSettings() {
+        val locationRequest = LocationRequest.create().apply { priority = LocationRequest.PRIORITY_LOW_POWER }
+        val requestBuilder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+        val settingClient = LocationServices.getSettingsClient(requireActivity())
+        val locationSettingsResponseTask = settingClient.checkLocationSettings(requestBuilder.build())
+        locationSettingsResponseTask.apply {
+            addOnSuccessListener {
+                FusedLocationProviderClient(requireContext()).lastLocation.addOnSuccessListener {
+                    map.zoomToLocation(it)
+                }
+            }
+            addOnFailureListener { exception ->
+                if(exception is ResolvableApiException) {
+                    try {
+                        exception.startResolutionForResult(requireActivity(), SaveReminderFragment.REQUEST_TURN_DEVICE_LOCATION_ON)
+                    } catch (sendEx: IntentSender.SendIntentException) {}
+                }
             }
         }
     }

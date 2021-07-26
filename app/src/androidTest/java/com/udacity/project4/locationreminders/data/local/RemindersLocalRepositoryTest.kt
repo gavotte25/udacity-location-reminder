@@ -12,9 +12,11 @@ import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.dto.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -28,7 +30,8 @@ import org.koin.core.context.stopKoin
 class RemindersLocalRepositoryTest {
 
     private lateinit var repo: RemindersLocalRepository
-    private lateinit var dao: FakeDao
+    private lateinit var dao: RemindersDao
+    private lateinit var db: RemindersDatabase
 
     @get:Rule
     var mainCoroutineRule = MainCoroutineRule()
@@ -36,27 +39,29 @@ class RemindersLocalRepositoryTest {
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
 
-    private fun setupRepo(dummyData: ArrayList<ReminderDTO> = arrayListOf(), errorFlag: Boolean = false) {
-        dao = FakeDao(dummyData, errorFlag)
-        repo = RemindersLocalRepository(dao, Dispatchers.Main)
+    private fun setupRepo(dummyData: ArrayList<ReminderDTO> = arrayListOf()) = runBlocking {
+        for(reminderDTO in dummyData) {
+            dao.saveReminder(reminderDTO)
+        }
     }
 
     @Before
-    fun prepare() {
+    fun createDb() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db = Room.inMemoryDatabaseBuilder(context, RemindersDatabase::class.java).build()
+        dao = db.reminderDao()
+        repo = RemindersLocalRepository(dao, Dispatchers.Main)
+    }
+
+    @After
+    fun closeDb() = runBlocking {
+        dao.deleteAllReminders()
+        db.close()
         stopKoin()
     }
 
     @Test
-    fun givenErrorDao_whenGetReminders_thenReturnError() = mainCoroutineRule.runBlockingTest{
-        setupRepo(errorFlag = true)
-        val result = repo.getReminders()
-        val isError = result::class == Result.Error::class
-        assertThat(isError , `is`(true))
-    }
-
-    @Test
     fun givenEmptyDao_whenGetReminders_thenReturnEmptyResult() = mainCoroutineRule.runBlockingTest {
-        setupRepo()
         val result = repo.getReminders()
         val data = (result as Result.Success).data
         assertThat(data.isEmpty() , `is`(true))
@@ -76,16 +81,7 @@ class RemindersLocalRepositoryTest {
     }
 
     @Test
-    fun givenErrorDao_whenGetReminderById_thenReturnError() = mainCoroutineRule.runBlockingTest {
-        setupRepo(errorFlag = true)
-        val result = repo.getReminder("1")
-        val message = (result as Result.Error).message
-        assertThat(message , `is`("My Error"))
-    }
-
-    @Test
     fun givenNonExistingId_whenGetReminderById_thenReturnError() = mainCoroutineRule.runBlockingTest {
-        setupRepo()
         val result = repo.getReminder("1")
         val message = (result as Result.Error).message
         assertThat(message , `is`("Reminder not found!"))
@@ -105,7 +101,6 @@ class RemindersLocalRepositoryTest {
 
     @Test
     fun givenEmptyDao_whenSaveReminder_thenNewReminderAdded() = mainCoroutineRule.runBlockingTest {
-        setupRepo()
         val newReminder = ReminderDTO("new reminder", "description","location",1.toDouble(),1.toDouble())
         repo.saveReminder(newReminder)
         val data = (repo.getReminders() as Result.Success).data
