@@ -14,9 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.databinding.DataBindingUtil
-import androidx.fragment.app.Fragment
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.udacity.project4.R
@@ -26,7 +24,6 @@ import com.udacity.project4.databinding.FragmentSaveReminderBinding
 import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
-import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class SaveReminderFragment : BaseFragment() {
@@ -129,19 +126,21 @@ class SaveReminderFragment : BaseFragment() {
         }
     }
 
-    private fun checkLocationSettingsAndAddGeofence(reminder: ReminderDataItem, resolve: Boolean = true) {
+    private fun checkLocationSettingsAndAddGeofence(reminder: ReminderDataItem, resolve: Boolean) {
         val locationRequest = LocationRequest.create().apply { priority = LocationRequest.PRIORITY_LOW_POWER }
         val requestBuilder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         val settingClient = LocationServices.getSettingsClient(requireActivity())
         val locationSettingsResponseTask = settingClient.checkLocationSettings(requestBuilder.build())
         locationSettingsResponseTask.apply {
-            addOnSuccessListener {
-                addGeofence(reminder)
+            addOnCompleteListener {
+                if(it.isSuccessful) {
+                    addGeofence(reminder)
+                }
             }
             addOnFailureListener { exception ->
                 if(exception is ResolvableApiException && resolve) {
                     try {
-                        exception.startResolutionForResult(requireActivity(), REQUEST_TURN_DEVICE_LOCATION_ON)
+                        startIntentSenderForResult(exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON, null, 0,0, 0, null)
                     } catch (sendEx: IntentSender.SendIntentException) {
                         Log.d("SaveReminderFragment", "Error getting location settings resolution: " + sendEx.message)
                     }
